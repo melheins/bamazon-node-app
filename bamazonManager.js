@@ -4,27 +4,78 @@ var clear = require('clear');
 const chalk = require('chalk');
 var figlet = require('figlet');
 var inquirer = require("inquirer");
-
+var dotenv = require('dotenv').config();
 
 var connection = mysql.createConnection({
-    host: "localhost",
-    port: 3306,
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
 
     // Your username
-    user: "root",
+    user: process.env.DB_USER,
 
     // Your password
-    password: "2017school",
-    database: "bamazon"
+    password: process.env.DB_PASS,
+    database: process.env.DB_DATABASE
 });
 
 connection.connect(function (err) {
     if (err) throw err;
     console.log("connected as id " + connection.threadId + "\n");
     clear();
-
-    displayProducts();
+    userOptions();
 });
+
+
+function userOptions() {
+    inquirer
+        .prompt([
+            {
+                name: "action",
+                type: "list",
+                message: "What would you like to do?",
+                choices: [
+                    {
+                        key: 'a',
+                        name: 'View Products for Sale',
+                        value: 'view_products'
+                    },
+                    {
+                        key: 'b',
+                        name: 'View Low Inventory',
+                        value: 'view_low'
+                    },
+                    {
+                        key: 'c',
+                        name: 'Add to Inventory',
+                        value: 'add_inventory'
+                    },
+                    {
+                        key: 'd',
+                        name: 'Add New Product',
+                        value: 'add_product'
+                    }
+                ]
+            }
+        ])
+        .then(function (answer) {
+            //console.log(answer);
+
+            if (answer.action === 'view_products') {
+                displayProducts();
+            }
+            else if (answer.action === 'view_low') {
+                displayLowQuantity();
+            }
+            else if (answer.action === 'add_inventory') {
+                addInventory();
+            }
+            else if (answer.action === 'add_product') {
+                addProduct();
+            }
+
+        });
+}
+
 
 function displayProducts() {
     connection.query("SELECT * FROM products", function (err, res) {
@@ -37,29 +88,48 @@ function displayProducts() {
                 , 'left': '║', 'left-mid': '╟', 'mid': '─', 'mid-mid': '┼'
                 , 'right': '║', 'right-mid': '╢', 'middle': '│'
             },
-            head: ['Id', 'Name', 'Price']
+            head: ['Id', 'Name', 'Price', 'Quantity']
         });
 
-
         for (var i = 0; i < res.length; i++) {
-            table.push([res[i].item_id, res[i].product_name, '$' + res[i].price]);
+            table.push([res[i].item_id, res[i].product_name, '$' + res[i].price, res[i].stock_quantity]);
         }
-        console.log("Welcome to Bamazon");
+        console.log("\nCurrent Products");
         console.log(table.toString());
-        // connection.end();
-        askWhatToBuy();
+        connection.end();
     });
-
-
 }
 
-function askWhatToBuy() {
+function displayLowQuantity() {
+    connection.query("SELECT * FROM products where stock_quantity < 5", function (err, res) {
+        //console.log(res);
+
+        var table = new Table({
+            chars: {
+                'top': '═', 'top-mid': '╤', 'top-left': '╔', 'top-right': '╗'
+                , 'bottom': '═', 'bottom-mid': '╧', 'bottom-left': '╚', 'bottom-right': '╝'
+                , 'left': '║', 'left-mid': '╟', 'mid': '─', 'mid-mid': '┼'
+                , 'right': '║', 'right-mid': '╢', 'middle': '│'
+            },
+            head: ['Id', 'Name', 'Price', 'Quantity']
+        });
+
+        for (var i = 0; i < res.length; i++) {
+            table.push([res[i].item_id, res[i].product_name, '$' + res[i].price, res[i].stock_quantity]);
+        }
+        console.log("\nLow Products");
+        console.log(table.toString());
+        connection.end();
+    });
+}
+
+function addInventory() {
     inquirer
         .prompt([
             {
                 name: "id",
                 type: "input",
-                message: "What is the id of the item you would like to buy?",
+                message: "What is the id of the item you would like to add more to?",
                 validate: function (value) {
                     var reg = /^\d+$/;
                     return reg.test(value) || "Id should be a number!";
@@ -68,7 +138,7 @@ function askWhatToBuy() {
             {
                 name: "amount",
                 type: "input",
-                message: "How many would you like to buy?",
+                message: "How many would you like to add?",
                 validate: function (value) {
                     var reg = /^\d+$/;
                     return reg.test(value) || "Amount should be a number!";
@@ -82,34 +152,72 @@ function askWhatToBuy() {
                 }, function (err, res) {
                     if (err) throw err;
                     //console.log(res);
-                    // console.log(res[0].stock_quantity);
-                    // console.log(answer.amount);
-                    if (res[0].stock_quantity >= answer.amount) {
-                        console.log('\nPurchased!');
-                        //Update database
-                        var newQuantity = res[0].stock_quantity - answer.amount;
-                        updateQuantity(answer.id, newQuantity);
-                        var totalCost = answer.amount * res[0].price;
-                        console.log('\nTotal Cost: ' + totalCost);
+                    if (typeof res != "undefined" && res != null && res.length > 0) {
+                        var newQuantity = res[0].stock_quantity + parseInt(answer.amount);
+                        connection.query("UPDATE products set ? where ?",
+                            [
+                                {
+                                    stock_quantity: newQuantity
+                                },
+                                {
+                                    item_id: answer.id
+                                }
+                            ], function (err, res) {
+                                console.log('Added ' + answer.amount);
+                            });
+                    } else {
+                        console.log(answer.id + ' is not a valid id.');
+
                     }
-                    else {
-                        console.log('\nInsufficient Quantity.');
-                        connection.end();
-                    }
+                    connection.end();
                 });
         });
 }
 
-function updateQuantity(id, amount) {
-    connection.query("UPDATE products set ? where ?",
-        [
+function addProduct() {
+    inquirer
+        .prompt([
             {
-                stock_quantity: amount
+                name: "name",
+                type: "input",
+                message: "What is the name the product you would like to add ?"
             },
             {
-                item_id: id
+                name: "department",
+                type: "input",
+                message: "What department is this product in?"
+            },
+            {
+                name: "price",
+                type: "input",
+                message: "What is the price of the product?",
+                validate: function (value) {
+                    var reg = /^\d+$/;
+                    return reg.test(value) || "Price should be a number!";
+                }
+            },
+            {
+                name: "quantity",
+                type: "input",
+                message: "How many of the product is in stock?",
+                validate: function (value) {
+                    var reg = /^\d+$/;
+                    return reg.test(value) || "Quantity should be a number!";
+                }
             }
-        ], function (err, res) {
-            connection.end();
+        ])
+        .then(function (answer) {
+            connection.query("INSERT INTO products SET ?",
+                {
+                    product_name: answer.name,
+                    department_name: answer.department,
+                    price: answer.price,
+                    stock_quantity: answer.quantity
+                }
+                , function (err, res) {
+                    console.log('New product added');
+                    connection.end();
+                });
+
         });
 }

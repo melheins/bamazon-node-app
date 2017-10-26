@@ -21,7 +21,7 @@ var connection = mysql.createConnection({
 connection.connect(function (err) {
     if (err) throw err;
     console.log("connected as id " + connection.threadId + "\n");
-    // clear();
+    clear();
    // connection.end();
 
     displayProducts();
@@ -45,7 +45,7 @@ function displayProducts() {
         for (var i = 0; i < res.length; i++) {
             table.push([res[i].item_id, res[i].product_name, '$' + res[i].price]);
         }
-        console.log("Welcome to Bamazon");
+        console.log("\nWelcome to Bamazon");
         console.log(table.toString());
         // connection.end();
         askWhatToBuy();
@@ -88,7 +88,7 @@ function askWhatToBuy() {
                     if (res[0].stock_quantity >= answer.amount) {
                         console.log('\nPurchased!');
                         //Update database
-                        var newQuantity = res[0].stock_quantity - answer.amount;
+                        var newQuantity = res[0].stock_quantity - parseInt(answer.amount);
                         updateQuantity(answer.id, newQuantity);
                         var totalCost = answer.amount * res[0].price;
                         console.log('\nTotal Cost: ' + totalCost);
