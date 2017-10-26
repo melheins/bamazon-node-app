@@ -1,0 +1,30 @@
+{
+  "name": "bamazon-node-app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/melheins/bamazon-node-app.git"
+  },
+  "keywords": [],
+  "author": "Melanie Heins",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/melheins/bamazon-node-app/issues"
+  },
+  "homepage": "https://github.com/melheins/bamazon-node-app",
+  "dependencies": {
+    "dedent-js": "^1.0.1",
+    "node-spotify-api": "^1.0.7",
+    "omdb": "^0.8.0",
+    "omdb-api": "^0.1.0",
+    "omdb-client": "^1.0.6",
+    "remove-punctuation": "0.0.4",
+    "spotify": "^0.3.0",
+    "twitter": "^1.7.1"
+  }
+}
