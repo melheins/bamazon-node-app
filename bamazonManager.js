@@ -142,7 +142,8 @@ function addInventory() {
                 validate: function (value) {
                     var reg = /^\d+$/;
                     return reg.test(value) || "Amount should be a number!";
-                }
+                },
+                default: 1
             }
         ])
         .then(function (answer) {
@@ -203,7 +204,8 @@ function addProduct() {
                 validate: function (value) {
                     var reg = /^\d+$/;
                     return reg.test(value) || "Quantity should be a number!";
-                }
+                },
+                default: 1
             }
         ])
         .then(function (answer) {
