@@ -46,7 +46,7 @@ Amazon-like storefront with the MySQL.
 
 
 ## Examples
-###Screenshots
+### Screenshots
 Customer - Buy Product
 
 ![Buy Product](sample/screenshots/BC01-buy_product.png)
@@ -71,4 +71,4 @@ Manager - Add Product
 
 ![Add Product](sample/screenshots/BM05-add_product.png)
 
-###Videos
+### Videos
